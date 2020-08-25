@@ -75,6 +75,7 @@ printStmt : PRINT expr SEMICOLON { $$ = new Print(*$<expr>2); }
 /* Expressions */
 expr : number
      | variable
+     | variable EQUAL expr { $$ = new Assign(*$<variable>1, *$<expr>3); }
      | expr binop expr { $$ = new Binary(*$<expr>1, $<token>2, *$<expr>3); }
      ;
 
