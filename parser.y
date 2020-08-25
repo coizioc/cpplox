@@ -4,7 +4,8 @@
 Program* program;
 
 extern int yylex();
-void yyerror(const char* s) { printf("ERROR: %s\n", s); }
+extern int yylineno;
+void yyerror(const char* s) { fprintf(stderr, "ERROR [line %d]: %s\n", yylineno, s); }
 %}
 
 %define parse.error verbose

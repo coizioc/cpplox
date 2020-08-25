@@ -7,10 +7,12 @@
 %}
 
 %option noyywrap
+%option yylineno
 
 %%
 
 [ \t\n]                 ;
+"//".*$                 ;
 "("                     return TOKEN(LEFT_PAREN);
 ")"                     return TOKEN(RIGHT_PAREN);
 "{"                     return TOKEN(LEFT_BRACE);

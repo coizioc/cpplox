@@ -15,3 +15,6 @@ parser: src/parser.cpp src/codegen.cpp src/tokens.cpp main.cpp
 
 debug: src/parser.cpp src/codegen.cpp src/tokens.cpp main.cpp
 	g++ -DDEBUG -O2 -Ilib $^ $(LLVM_CONFIG) -std=c++14 -o build/$@
+
+test: debug
+	python util/test.py build/parser
