@@ -2173,15 +2173,16 @@ union YYSTYPE
     Declaration* decl;
 
     Statement* stmt;
+    Expression* exprStmt;
     Print* printStmt;
 
-    Expression* expr;
+    Expr* expr;
     Number* number;
 
     std::string* string;
     int token;
 
-#line 111 "src/parser.hpp" /* yacc.c:1909  */
+#line 112 "src/parser.hpp" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;

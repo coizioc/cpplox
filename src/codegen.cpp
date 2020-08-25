@@ -3,6 +3,8 @@
 #include "node.hpp"
 #include "parser.hpp"
 
+#define PRINT_CREATING_THIS() std::cout << "Creating " << *this << "..." << std::endl
+
 std::unique_ptr<Module> CodeGenContext::TheModule =
     std::make_unique<Module>("main", TheContext);
 
@@ -56,7 +58,7 @@ GenericValue CodeGenContext::runCode() {
 
 Value* Binary::codeGen(CodeGenContext& context) {
 #ifdef DEBUG
-    std::cout << "Creating binary " << *this << std::endl;
+    PRINT_CREATING_THIS();
 #endif
     switch (op) {
         case PLUS:
@@ -79,14 +81,21 @@ Value* Binary::codeGen(CodeGenContext& context) {
 
 Value* Number::codeGen(CodeGenContext& context) {
 #ifdef DEBUG
-    std::cout << "Creating number" << value << std::endl;
+    PRINT_CREATING_THIS();
 #endif
     return ConstantFP::get(TheContext, APFloat(value));
 }
 
+Value* Expression::codeGen(CodeGenContext& context) {
+#ifdef DEBUG
+    PRINT_CREATING_THIS();
+#endif  
+    return expr.codeGen(context);
+}
+
 Value* Print::codeGen(CodeGenContext& context) {
 #ifdef DEBUG
-    std::cout << "Creating print" << std::endl;
+    PRINT_CREATING_THIS();
 #endif
     FunctionCallee printF = context.TheModule->getOrInsertFunction(
         "printf", FunctionType::get(
@@ -101,6 +110,9 @@ Value* Print::codeGen(CodeGenContext& context) {
 }
 
 Value* Program::codeGen(CodeGenContext& context) {
+#ifdef DEBUG
+    PRINT_CREATING_THIS();
+#endif
     DeclarationList::const_iterator it;
     Value* last = nullptr;
     for (it = decls.begin(); it != decls.end(); it++) {
@@ -108,8 +120,5 @@ Value* Program::codeGen(CodeGenContext& context) {
         // std::endl;
         last = (**it).codeGen(context);
     }
-#ifdef DEBUG
-    std::cout << "Creating block" << std::endl;
-#endif
     return last;
 }

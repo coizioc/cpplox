@@ -24,12 +24,12 @@ class Node {
 };
 
 class Declaration : public Node {};
-class Expression : public Node {};
 class Statement : public Declaration {};
+class Expr : public Node {};
 
 typedef std::vector<Declaration*> DeclarationList;
 typedef std::vector<Statement*> StatementList;
-typedef std::vector<Expression> ExpressionList;
+typedef std::vector<Expr> ExprList;
 
 class Program : public Node {
    public:
@@ -39,12 +39,12 @@ class Program : public Node {
 
    private:
     virtual std::ostream& print(std::ostream& os) const {
-        os << "Program";
+        os << "Program()";
         return os;
     }
 };
 
-class Number : public Expression {
+class Number : public Expr {
    public:
     double value;
     Number(double value) : value(value) {}
@@ -57,13 +57,12 @@ class Number : public Expression {
     }
 };
 
-class Binary : public Expression {
+class Binary : public Expr {
    public:
     int op;
-    Expression& lhs;
-    Expression& rhs;
-    Binary(Expression& lhs, int op, Expression& rhs)
-        : lhs(lhs), rhs(rhs), op(op) {}
+    Expr& lhs;
+    Expr& rhs;
+    Binary(Expr& lhs, int op, Expr& rhs) : lhs(lhs), rhs(rhs), op(op) {}
     virtual llvm::Value* codeGen(CodeGenContext& context);
 
    private:
@@ -73,15 +72,28 @@ class Binary : public Expression {
     }
 };
 
-class Print : public Statement {
+class Expression : public Statement {
    public:
-    Expression& expr;
-    Print(Expression& expr) : expr(expr) {}
+    Expr& expr;
+    Expression(Expr& expr) : expr(expr) {}
     virtual llvm::Value* codeGen(CodeGenContext& context);
 
    private:
     virtual std::ostream& print(std::ostream& os) const {
-        os << "PrintStmt";
+        os << "ExprStmt()";
+        return os;
+    }
+};
+
+class Print : public Statement {
+   public:
+    Expr& expr;
+    Print(Expr& expr) : expr(expr) {}
+    virtual llvm::Value* codeGen(CodeGenContext& context);
+
+   private:
+    virtual std::ostream& print(std::ostream& os) const {
+        os << "PrintStmt()";
         return os;
     }
 };

@@ -17,9 +17,10 @@ void yyerror(const char* s) { fprintf(stderr, "ERROR [line %d]: %s\n", yylineno,
     Declaration* decl;
 
     Statement* stmt;
+    Expression* exprStmt;
     Print* printStmt;
 
-    Expression* expr;
+    Expr* expr;
     Number* number;
 
     std::string* string;
@@ -35,7 +36,7 @@ void yyerror(const char* s) { fprintf(stderr, "ERROR [line %d]: %s\n", yylineno,
 %token <token> PRINT RETURN SUPER THIS TRUE VAR WHILE
 
 %type <program> stmts
-%type <stmt> printStmt stmt
+%type <stmt> exprStmt printStmt stmt
 %type <expr> number expr
 
 %left PLUS MINUS
@@ -51,8 +52,11 @@ program : stmts { program = $<program>1; };
 stmts : stmt { $$ = new Program(); $$->decls.push_back($<stmt>1); }
       | stmts stmt { $<program>1->decls.push_back($<stmt>2); }
 
-stmt : printStmt
+stmt : exprStmt
+     | printStmt
      ;
+
+exprStmt : expr SEMICOLON { $$ = new Expression(*$<expr>1); }
 
 printStmt : PRINT expr SEMICOLON { $$ = new Print(*$<expr>2); }
           ;
