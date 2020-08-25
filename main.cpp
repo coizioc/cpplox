@@ -9,12 +9,12 @@ extern FILE* yyin;
 extern int yyparse();
 
 void set_yyin(int argc, char** argv) {
-    if(argc > 1) {
+    if (argc > 1) {
         yyin = fopen(argv[1], "r");
-        if(yyin == nullptr) {
+        if (yyin == nullptr) {
             perror("Unable to open file");
             exit(1);
-        } 
+        }
     } else {
         yyin = stdin;
     }
