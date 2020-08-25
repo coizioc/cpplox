@@ -3,7 +3,8 @@
 #include "node.hpp"
 #include "parser.hpp"
 
-#define PRINT_CREATING_THIS() std::cout << "Creating " << *this << "..." << std::endl
+#define PRINT_CREATING_THIS() \
+    std::cout << "Creating " << *this << "..." << std::endl
 
 std::unique_ptr<Module> CodeGenContext::TheModule =
     std::make_unique<Module>("main", TheContext);
@@ -56,6 +57,18 @@ GenericValue CodeGenContext::runCode() {
     return v;
 }
 
+Value* Assign::codeGen(CodeGenContext& context) {
+#ifdef DEBUG
+    PRINT_CREATING_THIS();
+#endif
+    if (context.locals().find(name) == context.locals().end()) {
+        std::cerr << "undeclared variable " << name << std::endl;
+        return NULL;
+    }
+    return new StoreInst(rhs.codeGen(context), context.locals()[name], false,
+                         context.currentBlock());
+}
+
 Value* Binary::codeGen(CodeGenContext& context) {
 #ifdef DEBUG
     PRINT_CREATING_THIS();
@@ -86,10 +99,21 @@ Value* Number::codeGen(CodeGenContext& context) {
     return ConstantFP::get(TheContext, APFloat(value));
 }
 
+Value* Variable::codeGen(CodeGenContext& context) {
+#ifdef DEBUG
+    PRINT_CREATING_THIS();
+#endif
+    if (context.locals().find(name) == context.locals().end()) {
+        std::cerr << "Undeclared variable: " << name << std::endl;
+        return NULL;
+    }
+    return new LoadInst(context.locals()[name], "", context.currentBlock());
+}
+
 Value* Expression::codeGen(CodeGenContext& context) {
 #ifdef DEBUG
     PRINT_CREATING_THIS();
-#endif  
+#endif
     return expr.codeGen(context);
 }
 
@@ -109,15 +133,28 @@ Value* Print::codeGen(CodeGenContext& context) {
     return Builder.CreateCall(printF, ArgsV, "printfCall");
 }
 
+Value* Var::codeGen(CodeGenContext& context) {
+#ifdef DEBUG
+    PRINT_CREATING_THIS();
+#endif
+    Value* initializedValue = initializer.codeGen(context);
+
+    AllocaInst* alloc = new AllocaInst(initializedValue->getType(), 0, name,
+                                       context.currentBlock());
+    context.locals()[name] = alloc;
+    auto assign = Assign(name, initializer);
+    assign.codeGen(context);
+
+    return alloc;
+}
+
 Value* Program::codeGen(CodeGenContext& context) {
 #ifdef DEBUG
     PRINT_CREATING_THIS();
 #endif
-    DeclarationList::const_iterator it;
+    StatementList::const_iterator it;
     Value* last = nullptr;
     for (it = decls.begin(); it != decls.end(); it++) {
-        // std::cout << "Generating code for " << typeid(**it).name() <<
-        // std::endl;
         last = (**it).codeGen(context);
     }
     return last;

@@ -14,7 +14,7 @@ void yyerror(const char* s) { fprintf(stderr, "ERROR [line %d]: %s\n", yylineno,
     Node* node;
     Program* program;
 
-    Declaration* decl;
+    Var* varDecl;
 
     Statement* stmt;
     Expression* exprStmt;
@@ -22,6 +22,7 @@ void yyerror(const char* s) { fprintf(stderr, "ERROR [line %d]: %s\n", yylineno,
 
     Expr* expr;
     Number* number;
+    Variable* variable;
 
     std::string* string;
     int token;
@@ -35,9 +36,9 @@ void yyerror(const char* s) { fprintf(stderr, "ERROR [line %d]: %s\n", yylineno,
 %token <token> AND CLASS ELSE FALSE FUN FOR IF NIL OR
 %token <token> PRINT RETURN SUPER THIS TRUE VAR WHILE
 
-%type <program> stmts
-%type <stmt> exprStmt printStmt stmt
-%type <expr> number expr
+%type <program> decls
+%type <stmt> varDecl exprStmt printStmt stmt
+%type <expr> number variable expr
 
 %left PLUS MINUS
 %left STAR SLASH
@@ -46,23 +47,34 @@ void yyerror(const char* s) { fprintf(stderr, "ERROR [line %d]: %s\n", yylineno,
 
 %%
 
-program : stmts { program = $<program>1; };
+program : decls { program = $<program>1; };
+
+/* Declarations */
+decls : decl { $$ = new Program(); $$->decls.push_back($<stmt>1); }
+      | decls decl { $<program>1->decls.push_back($<stmt>2); }
+      ;
+
+decl : varDecl
+     | stmt
+     ;
+
+varDecl : VAR variable EQUAL expr SEMICOLON { $$ = new Var(*$<variable>2, *$<expr>4); }
+        ;
 
 /* Statements */
-stmts : stmt { $$ = new Program(); $$->decls.push_back($<stmt>1); }
-      | stmts stmt { $<program>1->decls.push_back($<stmt>2); }
-
 stmt : exprStmt
      | printStmt
      ;
 
 exprStmt : expr SEMICOLON { $$ = new Expression(*$<expr>1); }
+         ;
 
 printStmt : PRINT expr SEMICOLON { $$ = new Print(*$<expr>2); }
           ;
 
 /* Expressions */
 expr : number
+     | variable
      | expr binop expr { $$ = new Binary(*$<expr>1, $<token>2, *$<expr>3); }
      ;
 
@@ -71,3 +83,5 @@ binop : PLUS | MINUS | STAR | SLASH
 
 number : NUMBER {$$ = new Number(atof($1->c_str())); delete $1; }
        ;
+
+variable : IDENTIFIER {$$ = new Variable(*$1); delete $1; }

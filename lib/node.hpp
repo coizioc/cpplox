@@ -23,17 +23,15 @@ class Node {
     }
 };
 
-class Declaration : public Node {};
-class Statement : public Declaration {};
+class Statement : public Node {};
 class Expr : public Node {};
 
-typedef std::vector<Declaration*> DeclarationList;
 typedef std::vector<Statement*> StatementList;
 typedef std::vector<Expr> ExprList;
 
 class Program : public Node {
    public:
-    DeclarationList decls;
+    StatementList decls;
     Program() {}
     virtual llvm::Value* codeGen(CodeGenContext& context);
 
@@ -57,6 +55,34 @@ class Number : public Expr {
     }
 };
 
+class Variable : public Expr {
+   public:
+    std::string name;
+    Variable(const std::string& name) : name(name) {}
+    virtual llvm::Value* codeGen(CodeGenContext& context);
+
+   private:
+    virtual std::ostream& print(std::ostream& os) const {
+        os << "Variable(" << name << ")";
+        return os;
+    }
+};
+
+class Assign : public Expr {
+   public:
+    std::string name;
+    Expr& rhs;
+    Assign(std::string name, Expr& rhs) : name(name), rhs(rhs) {}
+    Assign(Variable& variable, Expr& rhs) : name(variable.name), rhs(rhs) {}
+    virtual llvm::Value* codeGen(CodeGenContext& context);
+
+   private:
+    virtual std::ostream& print(std::ostream& os) const {
+        os << "Assign(" << name << " = " << rhs << ")";
+        return os;
+    }
+};
+
 class Binary : public Expr {
    public:
     int op;
@@ -68,6 +94,21 @@ class Binary : public Expr {
    private:
     virtual std::ostream& print(std::ostream& os) const {
         os << "Binary(" << lhs << " " << op << " " << rhs << ")";
+        return os;
+    }
+};
+
+class Var : public Statement {
+   public:
+    std::string name;
+    Expr& initializer;
+    Var(Variable& variable, Expr& initializer)
+        : name(variable.name), initializer(initializer) {}
+    virtual llvm::Value* codeGen(CodeGenContext& context);
+
+   private:
+    virtual std::ostream& print(std::ostream& os) const {
+        os << "VarDecl(" << name << " = " << initializer << ")";
         return os;
     }
 };
