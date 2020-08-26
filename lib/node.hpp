@@ -70,15 +70,14 @@ class Variable : public Expr {
 
 class Assign : public Expr {
    public:
-    std::string name;
+    Variable& variable;
     Expr& rhs;
-    Assign(std::string name, Expr& rhs) : name(name), rhs(rhs) {}
-    Assign(Variable& variable, Expr& rhs) : name(variable.name), rhs(rhs) {}
+    Assign(Variable& variable, Expr& rhs) : variable(variable), rhs(rhs) {}
     virtual llvm::Value* codeGen(CodeGenContext& context);
 
    private:
     virtual std::ostream& print(std::ostream& os) const {
-        os << "Assign(" << name << " = " << rhs << ")";
+        os << "Assign(" << variable << " = " << rhs << ")";
         return os;
     }
 };
@@ -100,15 +99,15 @@ class Binary : public Expr {
 
 class Var : public Statement {
    public:
-    std::string name;
+    Variable& variable;
     Expr& initializer;
     Var(Variable& variable, Expr& initializer)
-        : name(variable.name), initializer(initializer) {}
+        : variable(variable), initializer(initializer) {}
     virtual llvm::Value* codeGen(CodeGenContext& context);
 
    private:
     virtual std::ostream& print(std::ostream& os) const {
-        os << "VarDecl(" << name << " = " << initializer << ")";
+        os << "VarDecl(" << variable << " = " << initializer << ")";
         return os;
     }
 };

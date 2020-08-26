@@ -40,6 +40,7 @@ void yyerror(const char* s) { fprintf(stderr, "ERROR [line %d]: %s\n", yylineno,
 %type <stmt> varDecl exprStmt printStmt stmt
 %type <expr> number variable expr
 
+%right EQUAL
 %left PLUS MINUS
 %left STAR SLASH
 
@@ -75,11 +76,11 @@ printStmt : PRINT expr SEMICOLON { $$ = new Print(*$<expr>2); }
 /* Expressions */
 expr : number
      | variable
-     | variable EQUAL expr { $$ = new Assign(*$<variable>1, *$<expr>3); }
+//     | variable EQUAL expr { $$ = new Assign(*$<variable>1, *$<expr>3); }
      | expr binop expr { $$ = new Binary(*$<expr>1, $<token>2, *$<expr>3); }
      ;
 
-binop : PLUS | MINUS | STAR | SLASH
+binop : PLUS | MINUS | STAR | SLASH | EQUAL
       ;
 
 number : NUMBER {$$ = new Number(atof($1->c_str())); delete $1; }

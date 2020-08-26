@@ -61,12 +61,12 @@ Value* Assign::codeGen(CodeGenContext& context) {
 #ifdef DEBUG
     PRINT_CREATING_THIS();
 #endif
-    if (context.locals().find(name) == context.locals().end()) {
-        std::cerr << "undeclared variable " << name << std::endl;
+    if (context.locals().find(variable.name) == context.locals().end()) {
+        std::cerr << "undeclared variable " << variable.name << std::endl;
         return NULL;
     }
-    return new StoreInst(rhs.codeGen(context), context.locals()[name], false,
-                         context.currentBlock());
+    auto store = Builder.CreateStore(rhs.codeGen(context), context.locals()[variable.name]);
+    return store;
 }
 
 Value* Binary::codeGen(CodeGenContext& context) {
@@ -74,6 +74,21 @@ Value* Binary::codeGen(CodeGenContext& context) {
     PRINT_CREATING_THIS();
 #endif
     switch (op) {
+        case EQUAL: {
+            Variable& lhsCast = static_cast<Variable&>(lhs);
+            Value* val = rhs.codeGen(context);
+            if(val == nullptr) {
+                return nullptr;
+            }
+
+            if(context.locals().find(lhsCast.name) == context.locals().end()) {
+                std::cerr << "Variable " << lhsCast.name << " not found." << std::endl;
+                exit(1);
+            }
+            Value* variable = context.locals()[lhsCast.name];
+            Builder.CreateStore(val, variable);
+            return val;
+        }
         case PLUS:
             return Builder.CreateFAdd(lhs.codeGen(context),
                                       rhs.codeGen(context), "");
@@ -107,7 +122,7 @@ Value* Variable::codeGen(CodeGenContext& context) {
         std::cerr << "Undeclared variable: " << name << std::endl;
         return NULL;
     }
-    return new LoadInst(context.locals()[name], "", context.currentBlock());
+    return Builder.CreateLoad(context.locals()[name], "");
 }
 
 Value* Expression::codeGen(CodeGenContext& context) {
@@ -139,13 +154,12 @@ Value* Var::codeGen(CodeGenContext& context) {
 #endif
     Value* initializedValue = initializer.codeGen(context);
 
-    AllocaInst* alloc = new AllocaInst(initializedValue->getType(), 0, name,
-                                       context.currentBlock());
-    context.locals()[name] = alloc;
-    auto assign = Assign(name, initializer);
-    assign.codeGen(context);
+    auto alloc = Builder.CreateAlloca(initializedValue->getType(), 0, variable.name);
+    context.locals()[variable.name] = alloc;
+    auto assign = Binary(variable, EQUAL, initializer);
+    auto res = assign.codeGen(context);
 
-    return alloc;
+    return res;
 }
 
 Value* Program::codeGen(CodeGenContext& context) {
